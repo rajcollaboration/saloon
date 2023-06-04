@@ -1,0 +1,29 @@
+# Node.js
+node_modules/
+
+# Logs
+logs/
+*.log
+
+# Dependency directories
+/.pnp/
+/.pnp.js
+/.yarn/
+/yarn-error.log
+/package-lock.json
+
+# Testing
+/coverage
+
+# Environment variables
+.env
+.env.*
+
+# Build output
+/build
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-*
+*.swp
