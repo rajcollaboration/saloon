@@ -32,6 +32,77 @@ export const register = async (req, res, next) => {
     }
 }
 
+// update saloon account
+
+export const changePassword = async (req, res, next) => {
+    try {
+        const { email, password } = req.body;
+        const user = await saloonAccount.findOne({ email });
+        if (!user) {
+            return next(createError( 401, "invalid credentials"));
+        }
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return next(createError( 401, "invalid credentials"));
+        }
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+        user.password = hashedPassword;
+        const updatedUser = await user.updateOne();
+        res.status(200).json({message: 'Password updated successfully', status:'success'});
+    } catch (error) {
+        next(error);
+    }
+}
+
+// get all saloons
+
+export const getAllSaloons = async (req, res, next) => {
+    try {
+        const saloons = await saloonAccount.find();
+        res.status(200).json({message: 'all saloons fetched successfully', status:'success', saloons});
+    } catch (error) {
+        next(error);
+    }
+}
+
+// edit saloon
+
+export const editSaloon = async (req, res, next) => {
+    try {
+        const { _id } = req.params;
+        const { shopEmail } = req.body;
+        const user = await saloonAccount.findOne({ _id });
+        if (!user) {
+            return next(createError( 401, "invalid user"));
+        }
+        const newSaloon = new saloonAccount({
+            _id,
+          ...req.body,
+        });
+        const updatedUser = await newSaloon.updateOne();
+        res.status(200).json({message: 'Saloon updated successfully', status:'success'});
+    } catch (error) {
+        next(error);
+    }
+}
+
+// delete saloon
+
+export const deleteSaloon = async (req, res, next) => {
+    try {
+        const { _id } = req.params;
+        const user = await saloonAccount.findOne({ _id });
+        if (!user) {
+            return next(createError( 401, "invalid user"));
+        }
+        const deletedUser = await user.deleteOne();
+        res.status(200).json({message: 'Saloon deleted successfully', status:'success'});
+    } catch (error) {
+        next(error);
+    }
+}
+
 // seloon login controller
 
 export const login = async (req, res, next) => {
@@ -95,6 +166,55 @@ export const getAllShops = async (req, res, next) => {
     }
 }
 
+// get single shop
+
+export const getShop = async (req, res, next) => {
+    const { shopId } = req.params;
+    try {
+        const shop = await Shop.findOne({ _id: shopId });
+        if (!shop) {
+            return next(createError( 401, "invalid shopid"));
+        }
+        res.status(200).json({message:'shop fetched successfully', status:'success', shop});
+    } catch (error) {
+        next(error);
+    }
+}
+
+// update shop
+
+export const updateShop = async (req, res, next) => {
+    const { shopId } = req.params;
+    try {
+        const shop = await Shop.findOne({ _id: shopId });
+        if (!shop) {
+            return next(createError( 401, "invalid shopid"));
+        }
+        const updatedShop = await Shop.findOneAndUpdate({ _id: shopId }, req.body, { new: true });
+        res.status(200).json({message:'shop updated successfully', status:'success', updatedShop});
+    } catch (error) {
+        next(error);
+    }
+}
+
+// delete shop
+
+export const deleteShop = async (req, res, next) => {
+    const { shopId } = req.params;
+    try {
+        const shop = await Shop.findOne({ _id: shopId });
+        
+        if (!shop) {
+            return next(createError( 401, "invalid shopid"));
+        }
+        console.log(shop);
+        await shop.deleteOne();
+        res.status(200).json({message:'shop deleted successfully', status:'success'});
+    } catch (error) {
+        next(error);
+    }
+}
+
 // review the shop and product
 
 export const review = async (req, res, next) => {
@@ -135,20 +255,19 @@ export const getAllReviews = async (req, res, next) => {
 // edit review
 
 export const editReview = async (req, res, next) => {
+    const { shopId, userId } = req.body;
+    const {reviewId} = req.params;
     try {
-        const { shopId, reviewId, userId } = req.body;
-        
-        const shop = await Shop.findOne({ _id:shopId });
-        
         const review = await Reviews.findOne({ _id:reviewId, userId: userId , shopId: shopId });
         if (!review) {
             return next(createError( 401, "invalid reviewid"));
         }
-        const updatedReview = await review.updateOne({...req.body });
+        review.set({...req.body });
+        const updatedReview = await review.save({...req.body });
         res.status(201).json({message:'review updated successfully', status:'success'});
     } catch (error) {
         next(error);
-    }
+    } 
 }
 
 
