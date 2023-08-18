@@ -309,7 +309,7 @@ export const booking = async (req, res, next) => {
             return next(createError(401, "Invalid userid"));
         }
 
-        // Get the current timestamp
+        
         const now = Date.now();
 
         // Check if the user has already booked the same slot
