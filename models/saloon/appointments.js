@@ -9,12 +9,10 @@ const appointmentScheema = new mongoose.Schema({
     appointmentDate:{
         type: String,
         required: true,
-        default: Date.now
     },
     appointmentTime:{
         type: String,
         required: true,
-        default: Date.now
     },
     appointmentStatus:{
         type: String,

@@ -312,26 +312,39 @@ export const booking = async (req, res, next) => {
         // Get the current timestamp
         const now = Date.now();
 
-        // Check if the user or any other user has already booked a slot for the shop within the next 30 minutes
-        const isBooked = await Appointment.findOne({
+        // Check if the user has already booked the same slot
+        const isUserAlreadyBooked = await Appointment.findOne({
             shopId,
-            $or: [
-                { userId, date: { $gte: now }, time: { $gte: now - 30 * 60 * 1000 } }, // Check if the same user booked
-                { userId: { $ne: userId }, date: { $gte: now }, time: { $gte: now - 30 * 60 * 1000 } } // Check if any other user booked
-            ]
+            userId,
+            appointmentDate: { $gte: now - 30 * 60 * 1000 },
+            appointmentTime: { $gte: now - 30 * 60 * 1000 }
         });
 
-        if (isBooked) {
+        if (isUserAlreadyBooked) {
+            return next(createError(409, "You have already booked this slot"));
+        }
+
+        // Check if any other user has booked the same slot
+        const isSlotAlreadyBooked = await Appointment.findOne({
+            shopId,
+            userId: { $ne: userId },
+            appointmentDate: { $gte: now - 30 * 60 * 1000 },
+            appointmentTime: { $gte: now - 30 * 60 * 1000 }
+        });
+
+        if (isSlotAlreadyBooked) {
             return next(createError(409, "This slot is already booked"));
         }
 
         // Create a new booking
-        const booking = await Appointment.create({ ...req.body, date: now, time: now ,});
+        const booking = await Appointment.create({ ...req.body, appointmentDate: now, appointmentTime: now });
         res.status(201).json({ message: 'Slot booking created successfully', status: 'success', details: booking });
     } catch (error) {
         next(error);
     }
 };
+
+
 
 
 // edit a booking from the database and update the status of the booking object 
