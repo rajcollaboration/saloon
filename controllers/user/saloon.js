@@ -295,25 +295,43 @@ export const createProduct = async (req, res, next) => {
 
 export const booking = async (req, res, next) => {
     try {
-        const { shopId, userId, date, time } = req.body;
-        const shop = await Shop.findOne({ _id:shopId });
+        const { shopId, userId } = req.body;
+
+        // Check if the shop exists
+        const shop = await Shop.findOne({ _id: shopId });
         if (!shop) {
-            return next(createError( 401, "invalid shopid"));
+            return next(createError(401, "Invalid shopid"));
         }
 
-        const user = await users.findOne({ _id:userId });
+        // Check if the user exists
+        const user = await users.findOne({ _id: userId });
         if (!user) {
-            return next(createError( 401, "invalid userid"));
+            return next(createError(401, "Invalid userid"));
         }
 
-        const isBooked = await Appointment.findOne({ userId:userId, shopId, date,time});
-        console.log(isBooked);
+        // Get the current timestamp
+        const now = Date.now();
+
+        // Check if the user or any other user has already booked a slot for the shop within the next 30 minutes
+        const isBooked = await Appointment.findOne({
+            shopId,
+            $or: [
+                { userId, date: { $gte: now }, time: { $gte: now - 30 * 60 * 1000 } }, // Check if the same user booked
+                { userId: { $ne: userId }, date: { $gte: now }, time: { $gte: now - 30 * 60 * 1000 } } // Check if any other user booked
+            ]
+        });
+
         if (isBooked) {
-                    return next(createError( 409, "This slot already booked"));
-                }
-        const booking = await Appointment.create({...req.body });
-        res.status(201).json({message: 'Sit booking created successfully', status:'success'});
+            return next(createError(409, "This slot is already booked"));
+        }
+
+        // Create a new booking
+        const booking = await Appointment.create({ ...req.body, date: now, time: now ,});
+        res.status(201).json({ message: 'Slot booking created successfully', status: 'success', details: booking });
     } catch (error) {
         next(error);
     }
-}
+};
+
+
+// edit a booking from the database and update the status of the booking object 
